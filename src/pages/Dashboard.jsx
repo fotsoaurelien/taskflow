@@ -5,50 +5,67 @@ import TaskCard from "../components/TaskCard";
 
 function Dashboard() {
 
-  // Chargement des tâches depuis localStorage
-  const [tasks, setTasks] = useState(() => {
+  const [tasks, setTasks] = useState([]);
 
-    const data = localStorage.getItem("taskflow_data");
-
-    return data ? JSON.parse(data) : [];
-
-  });
-
-  // Ajouter une tâche
-  const addTask = (nouvelleTache) => {
-    setTasks([...tasks, nouvelleTache]);
-  };
-
-  // Sauvegarde automatique
+  // Charger les tâches depuis le backend
   useEffect(() => {
 
-    localStorage.setItem(
-      "taskflow_data",
-      JSON.stringify(tasks)
-    );
+    fetch("http://localhost:5000/api/tasks")
+      .then((response) => response.json())
+      .then((data) => setTasks(data))
+      .catch((error) => console.error(error));
 
-  }, [tasks]);
+  }, []);
+
+  const addTask = async (nouvelleTache) => {
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:5000/api/tasks",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(nouvelleTache)
+        }
+      );
+
+      if (response.status === 201) {
+
+        const taskSauvegardee = await response.json();
+
+        setTasks([...tasks, taskSauvegardee]);
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+  };
 
   return (
-  <div className="container">
+    <div className="container">
 
-    <h1>Tableau de bord</h1>
+      <h1>Tableau de bord</h1>
 
-    <p>{tasks.length} tâches au total</p>
+      <p>{tasks.length} tâches au total</p>
 
-    <TaskForm onAddTask={addTask} />
+      <TaskForm onAddTask={addTask} />
 
-    {
-      tasks.map((task) => (
-        <TaskCard
-          key={task.id}
-          task={task}
-        />
-      ))
-    }
+      {
+        tasks.map((task) => (
+          <TaskCard
+            key={task._id}
+            task={task}
+          />
+        ))
+      }
 
-  </div>
-);
+    </div>
+  );
 }
 
 export default Dashboard;
